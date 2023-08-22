@@ -1,0 +1,7 @@
+__pycache__/
+/.vscode/
+/build/
+*.json
+*.jpg
+*.bmp
+*.tgz
