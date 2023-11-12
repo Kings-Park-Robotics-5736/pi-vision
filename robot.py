@@ -38,7 +38,7 @@ class RobotConnection:
             self.put_number(table_name, "centerx", -1)
             self.put_number(table_name, "centery", -1)
             self.put_number(table_name, "radius", -1)
-            self.put_number(table_name, "anglex", -1)
+            self.put_number(table_name, "anglex", -10000)
         else:
             self.put_number(table_name, "centerx", circle.x)
             self.put_number(table_name, "centery", circle.y)

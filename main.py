@@ -70,7 +70,7 @@ def send_results(robot_connection: robot.RobotConnection, resolution: typing.Tup
 
             circle: numpy.ndarray = result[0]
             timed_frame: video_stream.TimedFrame = result[1]
-            if last_seen:
+            if last_seen and timed_frame:
                 last_seen.set_frame_and_circle(timed_frame.frame, circle)
             if circle is None or len(circle) == 0:
                 robot_connection.put_circle("SmartDashboard", None)
@@ -101,7 +101,7 @@ def main():
     read_thread.daemon = True
     read_thread.start()
 
-    robot_connection = robot.RobotConnection("10.57.36.2", fake=True)
+    robot_connection = robot.RobotConnection("10.57.36.2", fake=False)
     robot_connection.connect()
 
     send_thread = threading.Thread(target=send_results, args=(robot_connection, shared_context.resolution, shared_context.last_seen))

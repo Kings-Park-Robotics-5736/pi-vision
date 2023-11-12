@@ -33,9 +33,8 @@ def get_image():
 
     frame, circle = last_seen.get_frame_and_circle()
 
-    frame = cv2.cvtColor(frame, cv2.COLOR_HSV2RGB)
-
-    if circle:
+    frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
+    if circle is not None:
         x, y, radius = circle
         cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 5)
 

@@ -8,6 +8,8 @@ import numpy
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 
+import logger
+
 
 # @contextlib.contextmanager
 # def get_camera(resolution=(320, 240), framerate=60):
@@ -68,18 +70,21 @@ def get_images(resolution=(320, 240), framerate=30):
 
         with contextlib.closing(PiRGBArray(camera, size=resolution)) as raw_capture:\
             # Capture frames from the camera
-            for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True): # type: ignore
-                with image_lock:
-                    timestamp = time.time()
-                    frame: PiRGBArray
-                    # Grab the raw NumPy array representing the image
-                    image = frame.array
+            try:
+                for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True): # type: ignore
+                    with image_lock:
+                        timestamp = time.time()
+                        frame: PiRGBArray
+                        # Grab the raw NumPy array representing the image
+                        image = frame.array
 
-                    # Clear the stream in preparation for the next frame
-                    raw_capture.truncate(0)
+                        # Clear the stream in preparation for the next frame
+                        raw_capture.truncate(0)
 
-                    # Yield the image
-                    yield TimedFrame(image, timestamp)
+                        # Yield the image
+                        yield TimedFrame(image, timestamp)
+            except:
+                logger.exception("Failed to read image")
 
 
 def transform_images(images: typing.Iterable[TimedFrame], transform: typing.Optional[typing.Callable[[numpy.ndarray], numpy.ndarray]]=None):
