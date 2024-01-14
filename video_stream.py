@@ -66,9 +66,9 @@ def get_images(resolution=(320, 240), framerate=30):
     # Initialize the camera and grab a reference to the raw camera capture
     with contextlib.closing(PiCamera()) as camera:
         camera.resolution = resolution
-        camera.framerate = framerate
+        camera.framerate = 30
 
-        with contextlib.closing(PiRGBArray(camera, size=resolution)) as raw_capture:\
+        with contextlib.closing(PiRGBArray(camera, size=resolution)) as raw_capture:
             # Capture frames from the camera
             try:
                 for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True): # type: ignore

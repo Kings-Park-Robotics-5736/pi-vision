@@ -15,6 +15,22 @@ class CircleDefinition:
         self.radius = radius
         self.anglex = anglex
 
+class EllipseDefinition:
+    x: float
+    y: float
+    d1: float
+    d2:float
+    theta:float
+    anglex: float
+
+    def __init__(self, x: float, y: float, d1: float, d2:float, theta:float, anglex: float):
+        self.x = x
+        self.y = y
+        self.d1 = d1
+        self.d2 = d2
+        self.theta = theta
+        self.anglex = anglex
+
 
 class RobotConnection:
     def __init__(self, robot_ip: str, fake: bool=False):
@@ -43,4 +59,18 @@ class RobotConnection:
             self.put_number(table_name, "centerx", circle.x)
             self.put_number(table_name, "centery", circle.y)
             self.put_number(table_name, "radius", circle.radius)
+            self.put_number(table_name, "anglex", circle.anglex)
+
+    def put_ellipse(self, table_name: str, circle: typing.Optional[EllipseDefinition]):
+        if circle is None:
+            self.put_number(table_name, "centerx", -1)
+            self.put_number(table_name, "centery", -1)
+            self.put_number(table_name, "d1", -1)
+            self.put_number(table_name, "d2", -1)
+            self.put_number(table_name, "anglex", -10000)
+        else:
+            self.put_number(table_name, "centerx", circle.x)
+            self.put_number(table_name, "centery", circle.y)
+            self.put_number(table_name, "d1", circle.d1)
+            self.put_number(table_name, "d2", circle.d2)
             self.put_number(table_name, "anglex", circle.anglex)
