@@ -185,7 +185,7 @@ def find_image(image_frame: video_stream.TimedFrame, app_context: app_contexts.A
                 result = cv2.pointPolygonTest(contour, (x,y), False) 
                 if (result > 0):
                     candidates.append((contour,e))
-        else:
+        if len(candidates)==0:
             candidates = ellipses
 
         biggest_ellipse = candidates[0][1]
