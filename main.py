@@ -90,14 +90,16 @@ def send_results(robot_connection: robot.RobotConnection, resolution: typing.Tup
                 angle_x,
             ))
 
-            """
+            robot_connection.sendFrame(timed_frame, circle)
+
+            
             counter +=1
 
             if counter %50 ==0:
                 print("FPS = ", counter/(time.time() - start_time), flush=True)
                 start_time = time.time()
                 counter = 0
-            """
+            
 
 
 
