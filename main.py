@@ -77,20 +77,20 @@ def send_results(robot_connection: robot.RobotConnection, resolution: typing.Tup
                 last_seen.set_frame_and_circle(timed_frame.frame, circle)
             if circle is None or len(circle) == 0:
                 robot_connection.put_circle("SmartDashboard", None)
-                continue
-
-            (x,y),(d1,d2),theta = circle
-            angle_x = math.atan((x - half_h_fov) * k) * 57.2958 #convert rad to deg
-            robot_connection.put_ellipse("SmartDashboard", robot.EllipseDefinition(
-                x,
-                y,
-                d1,
-                d2,
-                theta,
-                angle_x,
-            ))
-
-            robot_connection.sendFrame(timed_frame, circle)
+            else:
+                (x,y),(d1,d2),theta = circle
+                angle_x = math.atan((x - half_h_fov) * k) * 57.2958 #convert rad to deg
+                robot_connection.put_ellipse("SmartDashboard", robot.EllipseDefinition(
+                    x,
+                    y,
+                    d1,
+                    d2,
+                    theta,
+                    angle_x,
+                ))
+            
+            if counter %4 == 0:
+                robot_connection.sendFrame(timed_frame, circle)
 
             
             counter +=1
