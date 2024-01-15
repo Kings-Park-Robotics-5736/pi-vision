@@ -1,7 +1,11 @@
 import typing
 
-import networktables
+import ntcore
+import video_stream
+import numpy
+import cv2
 
+from cscore import CameraServer
 
 class CircleDefinition:
     x: float
@@ -37,17 +41,42 @@ class RobotConnection:
         self.robot_ip = robot_ip
         self.fake = fake
 
+        
+
     def connect(self):
         if self.fake:
-            networktables.NetworkTables.startTestMode()
+            self.nt = ntcore.NetworkTableInstance.startTestMode()
+            pass
         else:
-            networktables.NetworkTables.initialize(server=self.robot_ip)
+            self.nt = ntcore.NetworkTableInstance.getDefault()
+            self.nt.startClient4("wpilibpi")
+            self.nt.setServerTeam(5736)
+            self.nt.startDSClient()
 
-    def get_table(self, table_name: str) -> networktables.NetworkTable:
-        return networktables.NetworkTables.getTable(table_name)
+            #networktables.NetworkTables.initialize(server=self.robot_ip)
+            #CameraServer.startAutomaticCapture()
+            self.outputStream = CameraServer.putVideo("Processed", 320, 240)
+
+    def get_table(self, table_name: str) -> ntcore.NetworkTable:
+        return self.nt.getTable(table_name)
 
     def put_number(self, table_name: str, key: str, value: float):
         self.get_table(table_name).putNumber(key, value)
+
+
+    def sendFrame(self, timed_frame: video_stream.TimedFrame, ellipse: numpy.ndarray ):
+        if not timed_frame or not len(timed_frame.frame) or not numpy.any(timed_frame.frame):
+            return 
+        frame = None
+        if timed_frame.frame.ndim >2:
+            frame = cv2.cvtColor(timed_frame.frame, cv2.COLOR_HSV2BGR)
+        else:
+            frame = timed_frame.frame
+        if ellipse:
+            cv2.ellipse(frame, ellipse, (36,255,12), 2)
+            cv2.circle(frame, (int(ellipse[0][0]), int(ellipse[0][1])), int(2), (0, 255, 0), 2)
+        #print("Sending Frame", flush=True)
+        self.outputStream.putFrame(frame)
 
     def put_circle(self, table_name: str, circle: typing.Optional[CircleDefinition]):
         if circle is None:
