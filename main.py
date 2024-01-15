@@ -57,7 +57,7 @@ def process_images(app_context: app_contexts.AppContext):
 
 def send_results(robot_connection: robot.RobotConnection, resolution: typing.Tuple[int, int] = (320, 240), last_seen: typing.Optional[shared_context.LastFrame] = None):
     half_h_fov = resolution[0]/2
-    tan_h_fov = math.tan(.5427974) #half the HFOV degrees 31.1 to rad
+    tan_h_fov = math.tan(0.890118) #half the HFOV degrees 51 to rad
     k = tan_h_fov/half_h_fov
 
     counter = 0
