@@ -66,7 +66,7 @@ def get_images(resolution=(320, 240), framerate=30):
 
     # Initialize the camera and grab a reference to the raw camera capture
     with Picamera2() as camera:
-        video_config = camera.create_video_configuration(main={"size": (320, 240), "format": "RGB888"})
+        video_config = camera.create_video_configuration(main={"size": resolution, "format": "RGB888"})
         camera.configure(video_config)
         camera.set_logging(logging.WARN)
         camera.set_controls({"FrameRate": 60})
