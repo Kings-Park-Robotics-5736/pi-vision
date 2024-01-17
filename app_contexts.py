@@ -4,10 +4,16 @@ import pathlib
 import typing
 
 
-class TeamColor(enum.Enum):
-    RED = 1
-    BLUE = 2
+class ImageShow(enum.Enum):
+    COLOR_FILTER = 1
+    RGB = 2
+    MORPHOLOGY = 3
+    MEDIAN_BLUR =4
+    BLOB_AND_ELLIPSE = 5
 
+class Orientation(enum.Enum):
+    RIGHTSIDE_UP = 0
+    UPSIDE_DOWN = 1
 
 class AppContextUpdate(typing.NamedTuple):
     key: str
@@ -158,30 +164,38 @@ class HSVColorRange:
 class ColorContext:
     red1: HSVColorRange
     red2: HSVColorRange
+    image_show: ImageShow
 
-    blue: HSVColorRange
 
-    team: TeamColor
 
-    def __init__(self, red1: HSVColorRange, red2: HSVColorRange, blue: HSVColorRange, team: TeamColor):
+    def __init__(self, red1: HSVColorRange, red2: HSVColorRange, img_show:ImageShow, orientation:Orientation):
         self.red1 = red1
         self.red2 = red2
-        self.blue = blue
-        self.team = team
+        self.image_show=img_show
+        self.orientation = orientation
 
     def to_json(self):
         return {
             "red1": self.red1.to_json(),
             "red2": self.red2.to_json(),
-            "blue": self.blue.to_json(),
-            "team": {
-                "value": self.team.name,
+            "image_show": {
+                "value": self.image_show.name,
                 "context": ValueContext(
                     type="ENUM",
-                    name="Team",
+                    name="Image To Show",
                     value_min=None,
                     value_max=None,
-                    allowed_values=[team.name for team in TeamColor],
+                    allowed_values=[imgshow.name for imgshow in ImageShow],
+                    value_step=None,
+                ).to_json(),
+            },"orientation": {
+                "value": self.orientation.name,
+                "context": ValueContext(
+                    type="ENUM",
+                    name="Camera Orientation",
+                    value_min=None,
+                    value_max=None,
+                    allowed_values=[ori.name for ori in Orientation],
                     value_step=None,
                 ).to_json(),
             },
@@ -197,10 +211,10 @@ class ColorContext:
             self.red1.update(AppContextUpdate(rest, update.value))
         elif key == "red2":
             self.red2.update(AppContextUpdate(rest, update.value))
-        elif key == "blue":
-            self.blue.update(AppContextUpdate(rest, update.value))
-        elif key == "team":
-            self.team = TeamColor[update.value]
+        elif key == "image_show":
+            self.image_show = ImageShow[update.value]
+        elif key == "orientation":
+            self.orientation = Orientation[update.value]
         else:
             raise ValueError(f"Unknown key {update.key}")
 
@@ -215,86 +229,69 @@ class ColorContext:
                 lower=HSVColor(h=0, s=0, v=0),
                 upper=HSVColor(h=0, s=0, v=0),
             ),
-            blue=HSVColorRange.from_json(json_dict["blue"]) if "blue" in json_dict else HSVColorRange(
-                lower=HSVColor(h=0, s=0, v=0),
-                upper=HSVColor(h=0, s=0, v=0),
-            ),
-            team=TeamColor[json_dict["team"]["value"]] if "team" in json_dict else TeamColor.RED,
+            img_show=ImageShow[json_dict["image_show"]["value"]] if "image_show" in json_dict else ImageShow.RGB,
+            orientation=Orientation[json_dict["orientation"]["value"]] if "orientation" in json_dict else Orientation.RIGHTSIDE_UP,
         )
 
 
 class HoughCircleContext:
-    dp: float
-    param1: int
-    param2: int
+    min_area: int
+    min_circularity: float
+    min_convexity: float
+    min_inertia: float
 
-    circle_filter_b: float
-    circle_filter_m: int
-
-    def __init__(self, dp: float, param1: int, param2: int, circle_filter_b: float, circle_filter_m: int):
-        self.dp = dp
-        self.param1 = int(param1)
-        self.param2 = int(param2)
-        self.circle_filter_b = circle_filter_b
-        self.circle_filter_m = int(circle_filter_m)
+    def __init__(self, min_area: float, min_circ: float, min_conv: float, min_inertia: float,):
+        self.min_area = int(min_area)
+        self.min_circularity = float(min_circ)
+        self.min_convexity = float(min_conv)
+        self.min_inertia = float(min_inertia)
 
     def to_json(self):
         return {
-            "dp": {
-                "value": self.dp,
+            "min_area": {
+                "value": self.min_area,
                 "context": ValueContext(
                     type="NUMBER",
-                    name="dp",
-                    value_min=1,
-                    value_max=2,
-                    allowed_values=None,
-                    value_step=0.1,
-                ).to_json(),
-            },
-            "param1": {
-                "value": self.param1,
-                "context": ValueContext(
-                    type="NUMBER",
-                    name="param1",
+                    name="Min Area",
                     value_min=0,
-                    value_max=300,
+                    value_max=5000,
                     allowed_values=None,
                     value_step=1,
                 ).to_json(),
             },
-            "param2": {
-                "value": self.param2,
+            "min_circularity": {
+                "value": self.min_circularity,
                 "context": ValueContext(
                     type="NUMBER",
-                    name="param2",
+                    name="Min Circularity",
                     value_min=0,
-                    value_max=255,
+                    value_max=1,
                     allowed_values=None,
-                    value_step=1,
+                    value_step=.01,
                 ).to_json(),
             },
-            "circle_filter_b": {
-                "value": self.circle_filter_b,
+            "min_convexity": {
+                "value": self.min_convexity,
                 "context": ValueContext(
                     type="NUMBER",
-                    name="circle_filter_b",
+                    name="Min Convexity",
                     value_min=0,
-                    value_max=50,
+                    value_max=1,
                     allowed_values=None,
-                    value_step=0.25,
+                    value_step=.01,
                 ).to_json(),
             },
-            "circle_filter_m": {
-                "value": self.circle_filter_m,
+            "min_inertia": {
+                "value": self.min_inertia,
                 "context": ValueContext(
                     type="NUMBER",
-                    name="circle_filter_m",
+                    name="Min Inertia",
                     value_min=0,
-                    value_max=100,
+                    value_max=1,
                     allowed_values=None,
-                    value_step=1,
+                    value_step=0.01,
                 ).to_json(),
-            },
+            }
         }
 
     def update(self, update: "AppContextUpdate"):
@@ -303,27 +300,24 @@ class HoughCircleContext:
         rest = ""
         if len(keys) > 1:
             rest = keys[1]
-        if key == "dp":
-            self.dp = float(update.value)
-        elif key == "param1":
-            self.param1 = int(update.value)
-        elif key == "param2":
-            self.param2 = int(update.value)
-        elif key == "circle_filter_b":
-            self.circle_filter_b = float(update.value)
-        elif key == "circle_filter_m":
-            self.circle_filter_m = int(update.value)
+        if key == "min_area":
+            self.min_inertia = float(update.value)
+        elif key == "min_circularity":
+            self.min_circularity = int(update.value)
+        elif key == "min_convexity":
+            self.min_convexity = int(update.value)
+        elif key == "min_inertia":
+            self.min_inertia = float(update.value)
         else:
             raise ValueError(f"Unknown key {update.key}")
 
     @staticmethod
     def from_json(json_dict: dict):
         return HoughCircleContext(
-            dp=json_dict["dp"]["value"] if "dp" in json_dict else 1,
-            param1=json_dict["param1"]["value"] if "param1" in json_dict else 79,
-            param2=json_dict["param2"]["value"] if "param2" in json_dict else 13,
-            circle_filter_b=json_dict["circle_filter_b"]["value"] if "circle_filter_b" in json_dict else 2,
-            circle_filter_m=json_dict["circle_filter_m"]["value"] if "circle_filter_m" in json_dict else 75,
+            min_area=json_dict["min_area"]["value"] if "min_area" in json_dict else 250,
+            min_circ=json_dict["min_circularity"]["value"] if "min_circularity" in json_dict else 0.5,
+            min_conv=json_dict["min_convexity"]["value"] if "min_convexity" in json_dict else 0.5,
+            min_inertia=json_dict["min_inertia"]["value"] if "min_inertia" in json_dict else 0.1
         )
 
 
@@ -381,7 +375,7 @@ def load_app_context(file: pathlib.Path) -> AppContext:
 
 def get_default_app_context() -> AppContext:
     return AppContext(
-        circle_context = HoughCircleContext(dp=1, param1=79, param2=13, circle_filter_b=2, circle_filter_m=75),
+        circle_context = HoughCircleContext(min_area=250, min_circ=.5, min_conv=.5, min_inertia=.1),
         color_context = ColorContext(
             red1=HSVColorRange(
                 lower=HSVColor(h=0, s=90, v=0),
@@ -390,12 +384,9 @@ def get_default_app_context() -> AppContext:
             red2=HSVColorRange(
                 lower=HSVColor(h=170, s=90, v=0),
                 upper=HSVColor(h=180, s=255, v=255)
-            ),
-            blue=HSVColorRange(
-                lower=HSVColor(h=95, s=75, v=46),
-                upper=HSVColor(h=115, s=255, v=255)
-            ),
-            team=TeamColor.RED,
+            ),           
+            img_show=ImageShow.RGB,
+            orientation=Orientation.RIGHTSIDE_UP
         ),
     )
 

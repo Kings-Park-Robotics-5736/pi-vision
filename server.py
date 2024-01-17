@@ -1,9 +1,11 @@
 import io
 import json
 import typing
+
 import cv2
 import flask
 from flask_cors import CORS
+import numpy
 
 import app_contexts
 import shared_context
@@ -33,10 +35,13 @@ def get_image():
 
     frame, circle = last_seen.get_frame_and_circle()
 
-    frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
+    if not len(frame) or not numpy.any(frame):
+        return flask.Response(status=404)
+    if frame.ndim >2:
+        frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
     if circle is not None:
-        x, y, radius = circle
-        cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 5)
+        cv2.ellipse(frame, circle, (36,255,12), 2)
+        cv2.circle(frame, (int(circle[0][0]), int(circle[0][1])), int(2), (0, 255, 0), 2)
 
     _, buffer = cv2.imencode('.jpg', frame)
     response = flask.make_response(buffer.tobytes())
@@ -75,7 +80,7 @@ def static_proxy(path):
 
 
 def start_server():
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5800)
 
 
 if __name__ == "__main__":

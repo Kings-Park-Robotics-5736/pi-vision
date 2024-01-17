@@ -5,11 +5,10 @@ import time
 import typing
 
 import numpy
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+from picamera2 import Picamera2
 
 import logger
-
+import logging
 
 # @contextlib.contextmanager
 # def get_camera(resolution=(320, 240), framerate=60):
@@ -51,6 +50,8 @@ class TimedFrame(typing.NamedTuple):
     time: float
 
 
+
+
 def get_images(resolution=(320, 240), framerate=30):
     """
     Gets images from the picamera
@@ -59,7 +60,44 @@ def get_images(resolution=(320, 240), framerate=30):
     :param framerate: The framerate of the images
 
     :return: The images
-    """
+    """ 
+
+    image_lock = threading.Lock()
+
+    # Initialize the camera and grab a reference to the raw camera capture
+    with Picamera2() as camera:
+        video_config = camera.create_video_configuration(main={"size": resolution, "format": "RGB888"})
+        camera.configure(video_config)
+        camera.set_logging(logging.WARN)
+        camera.set_controls({"FrameRate": 60})
+
+        
+        
+        camera.start()
+        # Capture frames from the camera
+        try:
+            while True:
+                with image_lock:
+                    timestamp = time.time()
+                    frame: numpy.array = camera.capture_array("main")
+                    
+
+                    # Yield the image
+                    yield TimedFrame(frame, timestamp)
+        except:
+            logger.exception("Failed to read image")
+
+
+"""
+def get_images(resolution=(320, 240), framerate=30):
+    
+    Gets images from the picamera
+
+    :param resolution: The resolution of the images
+    :param framerate: The framerate of the images
+
+    :return: The images
+    
 
     image_lock = threading.Lock()
 
@@ -68,7 +106,7 @@ def get_images(resolution=(320, 240), framerate=30):
         camera.resolution = resolution
         camera.framerate = framerate
 
-        with contextlib.closing(PiRGBArray(camera, size=resolution)) as raw_capture:\
+        with contextlib.closing(PiRGBArray(camera, size=resolution)) as raw_capture:
             # Capture frames from the camera
             try:
                 for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True): # type: ignore
@@ -86,7 +124,7 @@ def get_images(resolution=(320, 240), framerate=30):
             except:
                 logger.exception("Failed to read image")
 
-
+"""
 def transform_images(images: typing.Iterable[TimedFrame], transform: typing.Optional[typing.Callable[[numpy.ndarray], numpy.ndarray]]=None):
     """
     Transforms images from the picamera

@@ -57,8 +57,11 @@ def process_images(app_context: app_contexts.AppContext):
 
 def send_results(robot_connection: robot.RobotConnection, resolution: typing.Tuple[int, int] = (320, 240), last_seen: typing.Optional[shared_context.LastFrame] = None):
     half_h_fov = resolution[0]/2
-    tan_h_fov = math.tan(.5427974) #half the HFOV degrees 31.1 to rad
+    tan_h_fov = math.tan(0.890118) #half the HFOV degrees 51 to rad
     k = tan_h_fov/half_h_fov
+
+    counter = 0
+    start_time = time.time()
 
     while True:
         with ready_queue_condition:
@@ -74,16 +77,31 @@ def send_results(robot_connection: robot.RobotConnection, resolution: typing.Tup
                 last_seen.set_frame_and_circle(timed_frame.frame, circle)
             if circle is None or len(circle) == 0:
                 robot_connection.put_circle("SmartDashboard", None)
-                continue
+            else:
+                (x,y),(d1,d2),theta = circle
+                angle_x = math.atan((x - half_h_fov) * k) * 57.2958 #convert rad to deg
+                robot_connection.put_ellipse("SmartDashboard", robot.EllipseDefinition(
+                    x,
+                    y,
+                    d1,
+                    d2,
+                    theta,
+                    angle_x,
+                ))
+            
+            if counter %4 == 0:
+                robot_connection.sendFrame(timed_frame, circle)
 
-            x, y, radius = circle
-            angle_x = math.atan((x - half_h_fov) * k) * 57.2958 #convert rad to deg
-            robot_connection.put_circle("SmartDashboard", robot.CircleDefinition(
-                x,
-                y,
-                radius,
-                angle_x,
-            ))
+            
+            counter +=1
+
+            if counter %50 ==0:
+                print("FPS = ", counter/(time.time() - start_time), flush=True)
+                start_time = time.time()
+                counter = 0
+            
+
+
 
 
 def main():
